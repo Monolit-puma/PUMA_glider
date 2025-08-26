@@ -1,0 +1,77 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+unsigned long dfg;
+int ar[5] = {12,45,65,12,34};
+int parametr [17] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+RF24 radio(9, 10);  // указать номера пинов, куда подключаются CE и CSN
+const byte rxAddr[6] = "00001"; // адрес
+const byte txAddr[6] = "00011";  // адрес
+int count = 0;
+int ends = 0;
+int tarnsmitt[5];
+int yr = 0;
+int couter = 0;
+int text[8];
+#include<Wire.h>
+void setup()
+{
+  Wire.begin();
+  radio.begin();
+  radio.openReadingPipe(0, rxAddr);
+  radio.openWritingPipe(txAddr); 
+  radio.startListening();
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  
+  
+  if (radio.available())
+  {
+    
+    radio.read(&text, sizeof(text));   
+   //Serial.println(text[0]);
+   
+     Wire.beginTransmission(8); /* Начинаем передачу на адресе 8 */
+     Wire.write(text[0]);  /* Отправляем "hello Arduino" */
+     Wire.endTransmission();    /* прекращаем передачу */           
+    
+  }
+  while(couter<8){
+    Serial.print(text[couter]);
+    Serial.print(",");
+    couter++;
+  }
+  couter = 0;
+  Serial.println();
+  //Serial.print(" ");
+  Wire.requestFrom(8,6);
+    while(Wire.available()){
+      tarnsmitt[count] = Wire.read();
+      //Serial.print(transmitt[cont]); 
+       count++;  
+    }
+    count=0;
+   /* while(yr <5){
+      ar[0] = ar[0] + tarnsmitt[yr] *10 ^(4-yr);
+      yr++;
+    }
+    yr = 0;
+    /*
+     * 
+     */
+    // ar[0] = tarnsmitt[0] *10000 +tarnsmitt[1] *1000+tarnsmitt[2] *100+tarnsmitt[3] *10 +tarnsmitt[4];
+//    Serial.println(ar[0]);
+    //Serial.println();
+
+    parametr[1] = text[1];
+    parametr[2] = text[2];
+    parametr[3] = text[3];
+  radio.stopListening();
+  radio.write(&parametr, sizeof(parametr));
+  radio.startListening();  
+delay(1);
+ //ar[0] = 0;
+}
