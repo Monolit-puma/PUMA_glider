@@ -2,22 +2,26 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 unsigned long dfg;
-int ar[5] = {12,45,65,12,34};
+int ar[5] = {9278,48735,65,12,34};
 int parametr [17] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 RF24 radio(9, 10);  // указать номера пинов, куда подключаются CE и CSN
 const byte rxAddr[6] = "00001"; // адрес
 const byte txAddr[6] = "00011";  // адрес
 int count = 0;
+int count1 = 0;
 int ends = 0;
 int tarnsmitt[5];
 int yr = 0;
 int couter = 0;
-int text[8];
+int hu = 0;
+int indclr=0;
+int text[8]={0,0,0,0,0,0,0,0};
 #include<Wire.h>
 void setup()
 {
-  Wire.begin();
+  Wire.begin(8);
   radio.begin();
+  Wire.onReceive(receiveEvent);
   radio.openReadingPipe(0, rxAddr);
   radio.openWritingPipe(txAddr); 
   radio.startListening();
@@ -26,18 +30,13 @@ void setup()
 
 void loop()
 {
-  
+sendArray();
   
   if (radio.available())
   {
-    
+   
     radio.read(&text, sizeof(text));   
    //Serial.println(text[0]);
-   
-     Wire.beginTransmission(8); /* Начинаем передачу на адресе 8 */
-     Wire.write(text[0]);  /* Отправляем "hello Arduino" */
-     Wire.endTransmission();    /* прекращаем передачу */           
-    
   }
   while(couter<8){
     Serial.print(text[couter]);
@@ -47,13 +46,7 @@ void loop()
   couter = 0;
   Serial.println();
   //Serial.print(" ");
-  Wire.requestFrom(8,6);
-    while(Wire.available()){
-      tarnsmitt[count] = Wire.read();
-      //Serial.print(transmitt[cont]); 
-       count++;  
-    }
-    count=0;
+
    /* while(yr <5){
       ar[0] = ar[0] + tarnsmitt[yr] *10 ^(4-yr);
       yr++;
@@ -66,12 +59,42 @@ void loop()
 //    Serial.println(ar[0]);
     //Serial.println();
 
-    parametr[1] = text[1];
-    parametr[2] = text[2];
-    parametr[3] = text[3];
+
   radio.stopListening();
   radio.write(&parametr, sizeof(parametr));
   radio.startListening();  
 delay(1);
  //ar[0] = 0;
 }
+
+void sendArray() {
+      int myData[] = {10, 20, 30, 40, 50}; // Пример массива
+      int arraySize = 8; // Размер массива
+
+      Wire.beginTransmission(8); // Начните передачу данных на ведомое устройство с адресом 0x08
+      for (int i = 0; i < arraySize; i++) {
+
+        Wire.write((text[i] >> 8) & 0xFF);
+        Wire.write(text[i] & 0xFF);
+       // Wire.write(ar[i]); // Отправка каждого байта массива
+      }
+      Wire.endTransmission(); // Завершите передачу данных
+}
+
+    void receiveEvent(int howMany) {
+
+      // Если это конец массива, считайте последний байт
+      while (Wire.available()) {
+  byte msb = Wire.read();
+  // Читаем младший байт
+  byte lsb = Wire.read();
+  
+  // Собираем число
+  int receivedNumber = (msb << 8) | lsb;
+        parametr[count1] =  receivedNumber ;
+        count1++;
+       // Serial.print();
+      }
+      count1= 0;
+      //Serial.println(); // Перенос строки для лучшей читаемости
+    }
